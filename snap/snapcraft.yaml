@@ -102,6 +102,33 @@ parts:
       - -usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/libdrm.so*
       - -usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/libglapi.so*
 
+  libfeedback:
+    # Required by squeekboard because libfeedback-dev isn't in 20.04
+    plugin: meson
+    source: https://source.puri.sm/Librem5/feedbackd.git
+    source-depth: 1
+    build-packages:
+      - dbus
+      - libgirepository1.0-dev
+      - libglib2.0-dev
+      - libgudev-1.0-dev
+      - libgsound-dev
+      - libjson-glib-dev
+      - valac
+
+  squeekboard:
+    after: [libfeedback]
+    plugin: meson
+    source: https://gitlab.gnome.org/World/Phosh/squeekboard.git
+    source-depth: 1
+    build-packages:
+      - libglib2.0-dev
+      - cargo
+      - wayland-protocols
+      - libgnome-desktop-3-dev
+      - libgtk-3-dev
+      - libwayland-dev
+
   platform:
     after: [ppa-setup]
     plugin: nil
