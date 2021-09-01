@@ -29,6 +29,7 @@ apps:
   ubuntu-frame:
     command-chain: [bin/run-user, bin/run-frame]
     command: usr/local/bin/frame
+    extensions: [gnome-3-38] # For squeekboard, which uses GTK
     plugs:
       - login-session-control
       - x11
@@ -107,26 +108,29 @@ parts:
     plugin: meson
     source: https://source.puri.sm/Librem5/feedbackd.git
     source-depth: 1
+    meson-parameters: [--prefix, /usr]
     build-packages:
       - dbus
       - libgirepository1.0-dev
-      - libglib2.0-dev
       - libgudev-1.0-dev
       - libgsound-dev
       - libjson-glib-dev
       - valac
+    stage-packages:
+      - libgudev-1.0-0
+      - libgsound0
+      - libjson-glib-1.0-0
 
   squeekboard:
     after: [libfeedback]
     plugin: meson
-    source: https://gitlab.gnome.org/World/Phosh/squeekboard.git
+    source: https://gitlab.gnome.org/wmww/squeekboard.git
+    source-branch: snap
     source-depth: 1
+    meson-parameters: [--prefix, /usr, -Dstrict=false]
     build-packages:
-      - libglib2.0-dev
       - cargo
       - wayland-protocols
-      - libgnome-desktop-3-dev
-      - libgtk-3-dev
       - libwayland-dev
 
   platform:
