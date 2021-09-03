@@ -20,10 +20,15 @@ environment:
   # Setup EGL from the plugs
   LD_LIBRARY_PATH:    $SNAP/graphics/lib
   LIBGL_DRIVERS_PATH: $SNAP/graphics/dri
+  # GTK
+  GDK_PIXBUF_MODULE_FILE: $SNAP/etc/gdk-pixbuf-loaders.cache
 
 layout:
   /usr/share:
     bind: $SNAP/usr/share
+  # For GTK
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0
 
 apps:
   ubuntu-frame:
@@ -44,6 +49,14 @@ apps:
 
 slots:
   wayland:
+  dbus-session:
+    interface: dbus
+    bus: session
+    name: org.gnome.SessionManager
+  dbus-session:
+    interface: dbus
+    bus: session
+    name: sm.puri.OSK0
 
 plugs:
   opengl:
@@ -125,7 +138,9 @@ parts:
   squeekboard:
     after: [libfeedback]
     plugin: meson
-    source: https://gitlab.gnome.org/World/Phosh/squeekboard.git
+    # source: https://gitlab.gnome.org/World/Phosh/squeekboard.git
+    source: https://gitlab.gnome.org/wmww/squeekboard.git
+    source-branch: snap
     source-depth: 1
     meson-parameters: [--prefix, /usr, -Dstrict=false]
     build-packages:
@@ -149,8 +164,9 @@ parts:
     stage-packages:
       - librsvg2-common
     override-build: |
-      update-mime-database ${SNAPCRAFT_PART_INSTALL}/usr/share/mime
-      /usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders > ${SNAPCRAFT_PART_INSTALL}/gdk-pixbuf-loaders.cache
+      update-mime-database "$SNAPCRAFT_PART_INSTALL/usr/share/mime"
+      mkdir -p "$SNAPCRAFT_PART_INSTALL/etc"
+      "/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders" > "$SNAPCRAFT_PART_INSTALL/etc/gdk-pixbuf-loaders.cache"
 
   platform:
     after: [ppa-setup]
