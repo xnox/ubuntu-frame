@@ -14,13 +14,17 @@ architectures:
 
 environment:
   # Prep for Mir
-  MIR_CLIENT_PLATFORM_PATH: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/mir/client-platform
   MIR_SERVER_PLATFORM_PATH: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/mir/server-platform
   LIBINPUT_QUIRKS_DIR: ${SNAP}/usr/share/libinput
   # Setup EGL from the plugs
   LD_LIBRARY_PATH:    $SNAP/graphics/lib
   LIBGL_DRIVERS_PATH: $SNAP/graphics/dri
   __EGL_VENDOR_LIBRARY_DIRS: $SNAP/graphics/glvnd/egl_vendor.d
+  XDG_CONFIG_HOME: $SNAP_USER_DATA/.config
+  XDG_DATA_HOME:   $SNAP_USER_DATA
+  XDG_DATA_DIRS:   $SNAP/usr/share
+  XDG_CONFIG_DIRS: $SNAP/etc/xdg
+  XDG_CACHE_HOME:  $SNAP_USER_COMMON/.cache
 
 layout:
   /usr/share/X11:
@@ -32,8 +36,14 @@ layout:
   /usr/share/drirc.d:
     bind: $SNAP/graphics/drirc.d
   # For GTK
+  /usr/share/glib-2.0/schemas:
+    bind: $SNAP/usr/share/glib-2.0/schemas
   /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0:
     bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0
+  /etc/gtk-3.0:
+    bind: $SNAP/etc/gtk-3.0
+  /usr/share/lintian/overrides/squeekboard:
+    bind: $SNAP/usr/share/lintian/overrides/squeekboard
 
 apps:
   ubuntu-frame:
@@ -58,7 +68,7 @@ slots:
     interface: dbus
     bus: session
     name: org.gnome.SessionManager
-  dbus-session:
+  dbus-session-1:
     interface: dbus
     bus: session
     name: sm.puri.OSK0
@@ -154,12 +164,20 @@ parts:
     build-packages:
       - libgdk-pixbuf2.0-0
       - shared-mime-info
+      - libglib2.0-0
+      - librsvg2-dev # So the libpixbufloader-svg.so loader can be loaded by gdk-pixbuf-query-loaders
     stage-packages:
       - librsvg2-common
     override-build: |
       update-mime-database "$SNAPCRAFT_PART_INSTALL/usr/share/mime"
-      mkdir -p "$SNAPCRAFT_PART_INSTALL/etc"
-      "/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders" > "$SNAPCRAFT_PART_INSTALL/etc/gdk-pixbuf-loaders.cache"
+    override-prime: |
+      snapcraftctl prime
+      # Compile the gsettings schemas
+      /usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/glib-2.0/glib-compile-schemas "$SNAPCRAFT_PRIME/usr/share/glib-2.0/schemas"
+      # Index the pixbuf loaders
+      GDK_PIXBUF_MODULEDIR=$SNAPCRAFT_PRIME/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/gdk-pixbuf-2.0/2.10.0/loaders
+      "/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders" > "$SNAPCRAFT_PRIME/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0/2.10.0/loaders.cache"
+      sed s!$SNAPCRAFT_PRIME!!g --in-place "$SNAPCRAFT_PRIME/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0/2.10.0/loaders.cache"
 
   platform:
     after: [ppa-setup]
